@@ -1,13 +1,18 @@
 package spaak.supertec.vedioupload.activity;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
 
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -44,7 +49,7 @@ public class UploadActivity extends AppCompatActivity {
     private ImageView imgPreview;
     private VideoView vidPreview;
     private Button btnUpload,btnGetdata;
-    long totalSize = 0;
+    public KProgressHUD hud;
     public ResponseModel responseModel;
 
     @Override
@@ -78,6 +83,7 @@ public class UploadActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // uploading the file to server
+                hudProgress();
                 new UploadFileToServer().execute();
             }
         });
@@ -89,6 +95,19 @@ public class UploadActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void hudProgress() {
+
+         hud = KProgressHUD.create(UploadActivity.this)
+                .setStyle(KProgressHUD.Style.SPIN_INDETERMINATE)
+                .setLabel("Please wait")
+                .setDetailsLabel("Data in Processing !!")
+                .setCancellable(false)
+                .setAnimationSpeed(2)
+                .setDimAmount(0.5f)
+                .show();
+    }
+
     /**
      * Displaying captured image/video on the screen
      */
@@ -193,15 +212,16 @@ public class UploadActivity extends AppCompatActivity {
             ApiInterface apiInterface = ApiClient.getClient().create(ApiInterface.class);
             File file = new File(filePath);
             RequestBody requestBodyId = RequestBody.create(MediaType.parse("multipart/form-data"), file);
-            MultipartBody.Part body = MultipartBody.Part.createFormData("image", file.getName(), requestBodyId);
-            Call<ResponseModel> call = apiInterface.uploadVideoToServer(RequestBody.create(MediaType.parse("text/plain"), "83"), body);
+            MultipartBody.Part body = MultipartBody.Part.createFormData("file", file.getName(), requestBodyId);
+            Call<ResponseModel> call = apiInterface.uploadVideoToServer(RequestBody.create(MediaType.parse("text/plain"), ""), body);
             call.enqueue(new Callback<ResponseModel>() {
                 @Override
                 public void onResponse(Call<ResponseModel> call, Response<ResponseModel> response) {
                     if (response.body() != null) {
                         if (response.isSuccessful()) {
                             responseModel = response.body();
-                            Log.d("PPPPPPPPP", response.body().toString());
+                            showNotification("Hey Smile", responseModel.msg);
+                            hud.dismiss();
                         }
                     }
                 }
@@ -210,13 +230,13 @@ public class UploadActivity extends AppCompatActivity {
                     Log.e("TAG", t.getMessage());
                 }
             });
-            return responseModel.toString();
+            return null;
         }
         @Override
         protected void onPostExecute(String result) {
             Log.e("PPPPPPPP", "Response from server: " + result);
-            // showing the server response in an alert dialog
-            showAlert(result);
+            // showing the server response in an alert dialog=-
+          //  showAlert(result);
             super.onPostExecute(result);
         }
     }
@@ -237,4 +257,17 @@ public class UploadActivity extends AppCompatActivity {
         alert.show();
     }
 
+    private void showNotification(String title, String task){
+        NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        if(Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+            NotificationChannel notificationChannel = new NotificationChannel("Hey Smile", task,
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            notificationManager.createNotificationChannel(notificationChannel);
+        }
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(getApplicationContext(),"Hey Smile")
+                .setContentTitle(title)
+                .setContentText(task)
+                .setSmallIcon(R.mipmap.ic_launcher);
+        notificationManager.notify(1, notification.build());
+    }
 }

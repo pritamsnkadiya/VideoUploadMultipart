@@ -13,7 +13,7 @@ import spaak.supertec.vedioupload.model.ResponseModel;
 public interface ApiInterface {
 
     @Multipart
-    @POST("api/gallery")
+    @POST("/upload/")
     Call<ResponseModel> uploadVideoToServer(@Part("user_id") RequestBody user_id, @Part MultipartBody.Part imageFile);
 
 

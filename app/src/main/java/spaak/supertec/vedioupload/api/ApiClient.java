@@ -27,7 +27,7 @@ public class ApiClient implements Serializable {
 
    // public static final String BASE_URL = "http://192.168.9.104:8000/";
 
-    public static final String BASE_URL = "http://13.235.173.125/";
+    public static final String BASE_URL = "http://shribalajismultispecialityhospital.com";
 
     public static boolean isProduction() {
         return production;
